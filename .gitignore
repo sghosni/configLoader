@@ -1,2 +1,3 @@
 .configloader/
 *.cfg
+__pycache__/
