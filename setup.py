@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="configloader",
-    version="0.1.0",
+    version="0.1.1",
     description="Config Parser and Loader",
     url="https://git.liateam.net/python/packages/configloader.git",
     author="Shahab Ghosni",
@@ -12,7 +12,7 @@ setup(
     install_requires=[
         "annotated-types == 0.5.0",
         "configparser == 6.0.0",
-        "pydantic == 2.1.1",
+        "pydantic == 2.1.1, == 1.10.12",
         "pydantic_core == 2.4.0",
         "typing_extensions == 4.7.1",
     ],
