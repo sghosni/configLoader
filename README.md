@@ -37,6 +37,7 @@ class general_config(BaseModel):
     version: float
     development: bool
 
+    # NOTE: if you want to use field_validator you should upgrade to pydantic 2.x
     @field_validator("version")
     @classmethod
     def name_must_contain_space(cls, v: float) -> float:
