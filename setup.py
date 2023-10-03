@@ -12,7 +12,7 @@ setup(
     install_requires=[
         "annotated-types == 0.5.0",
         "configparser == 6.0.0",
-        "pydantic == 1.10.12, >= 2.0.0",
+        "pydantic >= 1.10.0",
         "pydantic_core == 2.4.0",
         "typing_extensions == 4.7.1",
     ],
