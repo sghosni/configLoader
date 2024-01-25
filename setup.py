@@ -10,11 +10,11 @@ setup(
     license="BSD 2-clause",
     packages=["configloader"],
     install_requires=[
-        "annotated-types == 0.5.0",
-        "configparser == 6.0.0",
+        "annotated-types >= 0.5.0",
+        "configparser >= 6.0.0",
         "pydantic >= 1.10.0",
-        "pydantic_core == 2.4.0",
-        "typing_extensions == 4.7.1",
+        "pydantic_core >= 2.4.0",
+        "typing_extensions >= 4.7.1",
     ],
     classifiers=[
         "Programming Language :: Python :: 3.6",
@@ -22,5 +22,6 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
 )
