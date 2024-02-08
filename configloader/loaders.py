@@ -15,6 +15,7 @@ class ConfigLoader:
             self.active_sections[active_model.config_section_name] = active_model
 
     def load_config(self, config_file: str):
+        '''Load a single config file and validate it against the active models.'''
         config = ConfigParser()
         config.read(config_file)
         for active_section in self.active_sections:
@@ -30,6 +31,7 @@ class ConfigLoader:
                     raise Exception(f"Validation or type error: {e}")
 
     def load_configs(self):
+        '''Load all config files and validate them against the active models.'''
         config_files = glob.glob(os.path.join(self.config_dir, "*.cfg"))
         for config_file in config_files:
             self.load_config(config_file)
@@ -43,4 +45,5 @@ class ConfigLoader:
             )
 
     def get_config(self, section: str):
+        '''Get a single config section.'''
         return self.configs.get(section)
