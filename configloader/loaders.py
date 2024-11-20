@@ -6,11 +6,12 @@ from pydantic import BaseModel, ValidationError
 
 
 class ConfigLoader:
-    def __init__(self, config_dir: str, active_models: List[BaseModel]):
+    def __init__(self, config_dir: str, active_models: List[BaseModel], ignore_missing: bool = False):
         self.config_dir = config_dir
         self.configs: Dict = {}
         self.active_models = active_models
         self.active_sections = {}
+        self.ignore_missing = ignore_missing
         for active_model in self.active_models:
             self.active_sections[active_model.config_section_name] = active_model
 
@@ -18,17 +19,16 @@ class ConfigLoader:
         '''Load a single config file and validate it against the active models.'''
         config = ConfigParser()
         config.read(config_file)
-        for active_section in self.active_sections:
-            if active_section in config:
+        for active_section, model in self.active_sections.items():
+            if config.has_section(active_section):
                 try:
-                    app_config = self.active_sections[active_section](
-                        **config[active_section]
-                    )
-                    self.configs[app_config.config_section_name] = app_config
+                    section_data = {k: v for k, v in config.items(active_section)}
+                    app_config = model(**section_data)
+                    self.configs[active_section] = app_config
                 except KeyError as e:
-                    raise Exception(f"Missing key: {e}")
+                    raise KeyError(f"Missing key: {e}")
                 except (ValidationError, TypeError) as e:
-                    raise Exception(f"Validation or type error: {e}")
+                    raise ValueError(f"Validation or type error: {e}")
 
     def load_configs(self):
         '''Load all config files and validate them against the active models.'''
@@ -38,7 +38,7 @@ class ConfigLoader:
         parsed_configs = set(self.configs.keys())
         desired_configs = set(self.active_sections)
         missing_configs = list(desired_configs.difference(parsed_configs))
-        if len(missing_configs) > 0:
+        if len(missing_configs) > 0 and not self.ignore_missing:
             raise Exception(
                 "These config sections are missing in config files: "
                 + str(missing_configs)
