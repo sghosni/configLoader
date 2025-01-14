@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="configloader",
@@ -8,7 +8,7 @@ setup(
     author="Shahab Ghosni",
     author_email="s.ghosni@liateam.ir",
     license="BSD 2-clause",
-    packages=["configloader"],
+    packages=find_packages(),
     install_requires=[
         "annotated-types >= 0.5.0",
         "configparser >= 6.0.0",
