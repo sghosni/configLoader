@@ -1,5 +1,6 @@
 from .loaders import ConfigLoader
 from .exceptions import MissingSectionError, ConfigValidationError
-from .section import ConfigSection
+from .base import ConfigSection
+from .enum import ConfigEnum
 
-__all__ = ["ConfigLoader", "MissingSectionError", "ConfigValidationError", "ConfigSection"]
+__all__ = ["ConfigLoader", "MissingSectionError", "ConfigValidationError", "ConfigSection", "ConfigEnum"]

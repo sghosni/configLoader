@@ -4,17 +4,17 @@ A lightweight Python package to load and validate `.ini`-style configuration fil
 
 ## Features
 
-- Load `.ini`/`.cfg` configuration files from a directory.
+- Load `.cfg` configuration files from a directory.
 - Strong runtime validation using `pydantic`.
 - Support for optional or required config sections.
-- Extendable with reusable config section templates (e.g., MongoDB, MySQL, etc.).
+- Extendable with reusable config section templates (e.g., MongoDB, Redis, etc.).
 
 ## Installation
 
 You can install directly from GitHub:
 
 ```bash
-pip install git+https://github.com/your-username/configloader.git
+pip install git+https://github.com/sghosni/configLoader.git
 ```
 
 ## Quick Start
