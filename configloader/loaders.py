@@ -2,80 +2,73 @@ import os
 import glob
 import logging
 from configparser import ConfigParser
-from typing import Dict, List, Type, Optional
-from pydantic import BaseModel, ValidationError
+from typing import Dict, List, Type, TypeVar
+from .section import ConfigSection
+from .exceptions import ConfigLoaderError, ConfigValidationError, MissingSectionError
 
-from .exceptions import MissingSectionError, ConfigValidationError
 
-logger = logging.getLogger("configloader")
-logger.setLevel(logging.INFO)
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler()
 formatter = logging.Formatter("[%(levelname)s] %(message)s")
-console_handler.setFormatter(formatter)
-logger.handlers = [console_handler]
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
+T = TypeVar("T", bound=ConfigSection)
 
 class ConfigLoader:
-    def __init__(
-        self,
-        config_dir: str,
-        active_models: List[Type[BaseModel]],
-        ignore_missing: bool = False,
-    ):
+    def __init__(self, config_dir: str, active_models: List[Type[ConfigSection]], ignore_missing: bool = False):
         self.config_dir = config_dir
         self.ignore_missing = ignore_missing
+        self.configs: Dict[str, ConfigSection] = {}
+        self.active_sections: Dict[str, Type[ConfigSection]] = {}
 
-        self._models: Dict[str, Type[BaseModel]] = {}
         for model in active_models:
-            if not hasattr(model, "config_section_name"):
-                raise AttributeError(
-                    f"Model {model.__name__} is missing required attribute 'config_section_name'"
-                )
-            section = getattr(model, "config_section_name")
-            self._models[section] = model
+            section_name = model.config_section_name
+            self.active_sections[section_name] = model
+            logger.debug(f"Registered config section: {section_name} -> {model.__name__}")
 
-        self._configs: Dict[str, BaseModel] = {}
-
-    def load_config(self, config_file: str) -> None:
-        """Load and validate a single .cfg file."""
+    def load_config(self, config_file: str):
+        """Load and parse a single config file."""
         logger.info(f"Loading config file: {config_file}")
-        parser = ConfigParser()
-        parser.read(config_file)
+        config = ConfigParser()
+        config.read(config_file)
 
-        for section, model in self._models.items():
-            if parser.has_section(section):
+        for section_name, model_cls in self.active_sections.items():
+            if config.has_section(section_name):
+                section_data = dict(config.items(section_name))
                 try:
-                    data = dict(parser.items(section))
-                    self._configs[section] = model(**data)
-                    logger.info(f"✔ Loaded section: [{section}]")
-                except KeyError as e:
-                    raise KeyError(f"Missing key in section [{section}]: {e}")
-                except (ValidationError, TypeError) as e:
-                    raise ConfigValidationError(
-                        f"Validation error in section [{section}]: {e}"
-                    )
+                    validated = model_cls(**section_data)
+                    self.configs[section_name] = validated
+                    logger.info(f"Loaded section [{section_name}] from {os.path.basename(config_file)}")
+                except Exception as e:
+                    raise ConfigValidationError(section_name, str(e))
 
-    def load_configs(self) -> None:
-        """Load and validate all .cfg files in the config directory."""
-        logger.info(f"Scanning directory for config files: {self.config_dir}")
+    def load_configs(self):
+        """Load and parse all *.cfg files in the config directory."""
+        logger.info(f"Scanning config directory: {self.config_dir}")
         config_files = glob.glob(os.path.join(self.config_dir, "*.cfg"))
-
-        if not config_files:
-            logger.warning("No config files found.")
 
         for file in config_files:
             self.load_config(file)
 
-        loaded_sections = set(self._configs.keys())
-        expected_sections = set(self._models.keys())
-        missing_sections = expected_sections - loaded_sections
+        parsed_sections = set(self.configs.keys())
+        required_sections = set(self.active_sections.keys())
+        missing = required_sections - parsed_sections
 
-        if missing_sections and not self.ignore_missing:
-            raise MissingSectionError(
-                f"Missing required config sections: {sorted(missing_sections)}"
-            )
+        if missing and not self.ignore_missing:
+            raise MissingSectionError(list(missing))
 
-    def get_config(self, section: str) -> Optional[BaseModel]:
-        """Retrieve a parsed config model for a given section name."""
-        return self._configs.get(section)
+    def _get_config(self, section_name: str) -> ConfigSection:
+        """Private raw getter by section name."""
+        if section_name not in self.configs:
+            raise ConfigLoaderError(f"Config section '{section_name}' not found.")
+        return self.configs[section_name]
+
+    def get_config(self, model: Type[T]) -> T:
+        """Public typed getter by model class."""
+        section_name = model.config_section_name
+        config = self._get_config(section_name)
+        if not isinstance(config, model):
+            raise ConfigLoaderError(f"Config section '{section_name}' is not of type {model.__name__}")
+        return config
