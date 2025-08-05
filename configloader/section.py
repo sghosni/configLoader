@@ -1,6 +1,6 @@
 from abc import ABC
 from typing import ClassVar
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ConfigSection(BaseModel, ABC):
@@ -12,8 +12,7 @@ class ConfigSection(BaseModel, ABC):
 
     config_section_name: ClassVar[str]
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init_subclass__(cls):
         if not hasattr(cls, "config_section_name"):

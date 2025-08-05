@@ -2,7 +2,7 @@ import os
 import glob
 import logging
 from configparser import ConfigParser
-from typing import Dict, List, Type
+from typing import Dict, List, Type, TypeVar
 from .section import ConfigSection
 from .exceptions import ConfigLoaderError, ConfigValidationError, MissingSectionError
 
@@ -14,6 +14,7 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
+T = TypeVar("T", bound=ConfigSection)
 
 class ConfigLoader:
     def __init__(self, config_dir: str, active_models: List[Type[ConfigSection]], ignore_missing: bool = False):
@@ -58,8 +59,16 @@ class ConfigLoader:
         if missing and not self.ignore_missing:
             raise MissingSectionError(list(missing))
 
-    def get_config(self, section_name: str) -> ConfigSection:
-        """Access a loaded config section."""
+    def _get_config(self, section_name: str) -> ConfigSection:
+        """Private raw getter by section name."""
         if section_name not in self.configs:
             raise ConfigLoaderError(f"Config section '{section_name}' not found.")
         return self.configs[section_name]
+
+    def get_config(self, model: Type[T]) -> T:
+        """Public typed getter by model class."""
+        section_name = model.config_section_name
+        config = self._get_config(section_name)
+        if not isinstance(config, model):
+            raise ConfigLoaderError(f"Config section '{section_name}' is not of type {model.__name__}")
+        return config

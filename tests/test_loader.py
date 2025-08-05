@@ -31,7 +31,7 @@ def test_load_valid_config(tmp_path: Path):
     loader = ConfigLoader(str(tmp_path), [DummyConfig])
     loader.load_configs()
 
-    config = loader.get_config("dummy")
+    config = loader.get_config(DummyConfig)
     assert config is not None
     assert config.host == "127.0.0.1"
     assert config.port == 8080
@@ -69,4 +69,4 @@ def test_ignore_missing_passes(tmp_path: Path):
     loader = ConfigLoader(str(tmp_path), [DummyConfig], ignore_missing=True)
     loader.load_configs()
     with pytest.raises(ConfigLoaderError, match="Config section 'dummy' not found."):
-        loader.get_config("dummy")
+        loader.get_config(DummyConfig)
