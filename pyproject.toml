@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "configloader"
-version = "0.1.1"
+version = "0.1.7"
 description = "Config Parser and Loader"
 readme = "README.md"
 license = {text = "BSD 2-clause"}
