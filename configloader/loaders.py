@@ -3,7 +3,7 @@ import glob
 import logging
 from configparser import ConfigParser
 from typing import Dict, List, Type, TypeVar
-from .section import ConfigSection
+from .base import ConfigSection
 from .exceptions import ConfigLoaderError, ConfigValidationError, MissingSectionError
 
 
