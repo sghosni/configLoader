@@ -2,9 +2,11 @@ import os
 import glob
 import logging
 from configparser import ConfigParser
-from typing import Dict, List, Type, TypeVar
+from typing import Dict, List, Type
 from .base import ConfigSection
-from .exceptions import ConfigLoaderError, ConfigValidationError, MissingSectionError
+from .accessor import ConfigAccessor
+from .container import ConfigContainer
+from .exceptions import ConfigValidationError, MissingSectionError
 
 
 logger = logging.getLogger(__name__)
@@ -14,10 +16,14 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
-T = TypeVar("T", bound=ConfigSection)
 
 class ConfigLoader:
-    def __init__(self, config_dir: str, active_models: List[Type[ConfigSection]], ignore_missing: bool = False):
+    def __init__(
+        self,
+        config_dir: str,
+        active_models: List[Type[ConfigSection]],
+        ignore_missing: bool = False,
+    ):
         self.config_dir = config_dir
         self.ignore_missing = ignore_missing
         self.configs: Dict[str, ConfigSection] = {}
@@ -26,7 +32,9 @@ class ConfigLoader:
         for model in active_models:
             section_name = model.config_section_name
             self.active_sections[section_name] = model
-            logger.debug(f"Registered config section: {section_name} -> {model.__name__}")
+            logger.debug(
+                f"Registered config section: {section_name} -> {model.__name__}"
+            )
 
     def load_config(self, config_file: str):
         """Load and parse a single config file."""
@@ -40,12 +48,14 @@ class ConfigLoader:
                 try:
                     validated = model_cls(**section_data)
                     self.configs[section_name] = validated
-                    logger.info(f"Loaded section [{section_name}] from {os.path.basename(config_file)}")
+                    logger.info(
+                        f"Loaded section [{section_name}] from {os.path.basename(config_file)}"
+                    )
                 except Exception as e:
                     raise ConfigValidationError(section_name, str(e))
 
-    def load_configs(self):
-        """Load and parse all *.cfg files in the config directory."""
+    def load_configs(self) -> ConfigContainer:
+        """Load all *.cfg files in the config directory and return a container."""
         logger.info(f"Scanning config directory: {self.config_dir}")
         config_files = glob.glob(os.path.join(self.config_dir, "*.cfg"))
 
@@ -59,16 +69,4 @@ class ConfigLoader:
         if missing and not self.ignore_missing:
             raise MissingSectionError(list(missing))
 
-    def _get_config(self, section_name: str) -> ConfigSection:
-        """Private raw getter by section name."""
-        if section_name not in self.configs:
-            raise ConfigLoaderError(f"Config section '{section_name}' not found.")
-        return self.configs[section_name]
-
-    def get_config(self, model: Type[T]) -> T:
-        """Public typed getter by model class."""
-        section_name = model.config_section_name
-        config = self._get_config(section_name)
-        if not isinstance(config, model):
-            raise ConfigLoaderError(f"Config section '{section_name}' is not of type {model.__name__}")
-        return config
+        return ConfigContainer(ConfigAccessor(self.configs))
